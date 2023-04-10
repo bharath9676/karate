@@ -1,0 +1,32 @@
+Feature: Common Actions for DexUI
+
+  Background:
+    * json loginPageObject = read('classpath:objectReference/loginPage.json')['tescoOneLogin']
+    * json urls = loginPageObject['urls']
+    * string login2Url = urls['login']
+    * string exceptionsUrl = urls['exceptions']
+    * string experienceUrl = urls['experience']
+    * string usernameInput = loginPageObject['usernameInput']
+    * string submitBtn = loginPageObject['submitBtn']
+    * string passwordInput = loginPageObject['passwordInput']
+    * string searchBox = loginPageObject['searchBox']
+
+
+  @LoginUsingProvidedArgs
+  Scenario: Login to PPE
+    * driver login2Url
+    * maximize()
+    * waitFor(usernameInput).input(username)
+#    username and password set in the calling feature file.
+    * click(submitBtn)
+    * waitFor(passwordInput).input(utils.encryptDecrypt(password,'decrypt'))
+    * submit().click(submitBtn)
+    * retry(5,10000).waitFor(searchBox)
+
+  @FetchToken
+  Scenario: Get Access Token
+    * driver urls['token']
+    * driver urls['token']
+    * waitForText('body', 'access_token')
+    * json tokenResponse = text('pre')
+    * def accessTokenFromStoreScheduler = tokenResponse.access_token
