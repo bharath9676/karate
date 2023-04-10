@@ -1,0 +1,261 @@
+package JavaUtils;
+
+import com.tesco.calendar.reporting.TescoCalendarRunner;
+import io.github.bonigarcia.wdm.WebDriverManager;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
+import java.util.Base64;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+import static com.oracle.truffle.js.builtins.GlobalBuiltins.GlobalPrintBuiltins.GlobalPrint.print;
+
+public class MyUtils {
+	private static final Pattern plusOrMinus = Pattern.compile("[+|-]");
+
+	public static String decode(String token) {
+		Base64.Decoder decoder = Base64.getDecoder();
+		return new String(decoder.decode(token));
+	}
+
+	public static String getTescoWeek(String value) {
+		int delta = 0;
+		if (plusOrMinus.matcher(value).find())
+			delta = Integer.parseInt(value.substring(1).replaceAll(" ", ""));
+
+		TescoCalendarRunner runner = new TescoCalendarRunner();
+		LocalDate date = LocalDate.now().plusDays(delta);
+		String tescoWeek = runner.tescoCalendar(date).getTescoWeek();
+		return tescoWeek;
+	}
+
+	public static String setupDriver() {
+		WebDriverManager.chromedriver().setup();
+		String path = WebDriverManager.chromedriver().getDownloadedDriverPath();
+		System.out.println("*** Driver path: " + path);
+		return path;
+	}
+
+	public static void setAccessToken(String token) {
+		System.out.println("*** setting up token *** " + token);
+		System.setProperty("karate.accessTokenGlobal", token);
+	}
+
+	public static String getDateTime(String... args) {
+		// variable args
+		// args[0] day "yesterday", "today" etc. refer switch case
+		// args[1] time "09:15", "atCurrentUtcTime", "atstartofday"
+
+		// LocalDate based on UTC current time
+		LocalDate localDate = LocalDate.now(ZoneId.of("Europe/London"));
+		// Adjust Day
+		if (args.length != 0) {
+			switch (args[0].toLowerCase()) {
+			case "daybeforeyesterday":
+				localDate = localDate.minusDays(2);
+				break;
+			case "yesterday":
+				localDate = localDate.minusDays(1);
+				break;
+			case "week-1":
+				localDate = localDate.minusWeeks(1);
+				break;
+			case "week+1":
+				localDate = localDate.plusWeeks(1);
+				break;
+			case "tomorrow":
+				localDate = localDate.plusDays(1);
+				break;
+			// Beginning Sunday of current week
+			case "startweekdate":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 1);
+				break;
+			// Next Sunday
+			case "endweekdate":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 7).plusDays(1);
+				break;
+
+			// Beginning Sunday of current week
+			case "sun":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 1);
+				break;
+
+			case "mon":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 2);
+				break;
+
+			case "tue":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 3);
+				break;
+
+			case "wed":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 4);
+				break;
+
+			case "thu":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 5);
+				break;
+
+			case "fri":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 6);
+				break;
+
+			case "sat":
+				localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 7);
+				break;
+			}
+			// Adjust Time (if provided)
+			if (args.length > 1) {
+				if (args[1].equalsIgnoreCase("atcurrentutctime"))
+					return localDate.atTime(LocalTime.now(ZoneId.of("UTC"))).toInstant(ZoneOffset.UTC).toString();
+				else if (args[1].equalsIgnoreCase("atstartofday"))
+					return localDate.atStartOfDay(ZoneId.of("Europe/London")).toInstant().toString();
+				else if (args[1].equalsIgnoreCase("atendofday"))
+					return localDate.atTime(23, 59, 00).atZone(ZoneId.of("Europe/London")).toInstant().toString();
+				else {// At provided LocalTime London - "09:47"
+					int hour = Integer.parseInt(args[1].substring(0, 2));
+					int minute = Integer.parseInt(args[1].substring(3));
+					// construct London local time and conver to UTC time instant
+					return localDate.atTime(hour, minute).atZone(ZoneId.of("Europe/London")).toInstant().toString();
+				}
+			}
+			return localDate.toString();
+
+		}
+		// Returns current UTC DateTime if no argument is provided
+		return ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+
+	}
+
+	private static Date formatDate(String day) {
+		final Calendar cal = Calendar.getInstance();
+		if (day.equalsIgnoreCase("yesterday")) {
+			cal.add(Calendar.DATE, -1);
+			return cal.getTime();
+		} else if (day.equalsIgnoreCase("today")) {
+			cal.add(Calendar.DATE, 0);
+			return cal.getTime();
+		} else {
+			cal.add(Calendar.DATE, -1);
+			return cal.getTime();
+		}
+	}
+
+	public static String getDate(String day) {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		return dateFormat.format(formatDate(day));
+	}
+	
+	//Only 2 Argument can be pass 
+	// startweekdate --> will return date of current week Sunday
+	// endweekdate --> will return date of current week Saturday
+	public static String getDate_StartEnd_OfWeek(String date) {
+
+		LocalDate localDate = LocalDate.now(ZoneId.of("Europe/London"));
+		if (date.equalsIgnoreCase("startweekdate")) {
+			localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 1);
+		} else if (date.equalsIgnoreCase("endweekdate")) {
+			localDate = localDate.with(WeekFields.of(Locale.US).dayOfWeek(), 7);
+		}
+		return localDate.toString();
+	}
+
+	public static String encryptDecrypt(String str, String cryptType) throws IOException {
+
+		if (cryptType.equals("decrypt")) {
+			str = URLDecoder.decode(str, "UTF-8");
+		}
+
+		int temp = 0;
+		String ptext;
+		String key = null;
+		int s[] = new int[256];
+		int k[] = new int[256];
+		ptext = str;
+
+		String keystr;
+		FileReader fr = new FileReader("D:" + File.separator + "key.txt");
+		BufferedReader br = new BufferedReader(fr);
+		while ((keystr = br.readLine()) != null) {
+			key = keystr;
+		}
+
+		char ptextc[] = ptext.toCharArray();
+		char keyc[] = key.toCharArray();
+		int cipher[] = new int[ptext.length()];
+		int ptexti[] = new int[ptext.length()];
+		int keyi[] = new int[key.length()];
+
+		for (int i = 0; i < ptext.length(); i++) {
+			ptexti[i] = (int) ptextc[i];
+		}
+		for (int i = 0; i < key.length(); i++) {
+			keyi[i] = (int) keyc[i];
+		}
+		for (int i = 0; i < 255; i++) {
+			s[i] = i;
+			k[i] = keyi[i % key.length()];
+		}
+		int j = 0;
+		for (int i = 0; i < 255; i++) {
+			j = (j + s[i] + k[i]) % 256;
+			temp = s[i];
+			s[i] = s[j];
+			s[j] = temp;
+		}
+		int i = 0;
+		j = 0;
+		int z = 0;
+		for (int l = 0; l < ptext.length(); l++) {
+			i = (l + 1) % 256;
+			j = (j + s[i]) % 256;
+			temp = s[i];
+			s[i] = s[j];
+			s[j] = temp;
+			z = s[(s[i] + s[j]) % 256];
+			cipher[l] = z ^ ptexti[l];
+		}
+
+		char convert[] = new char[cipher.length];
+		String convertedString = "";
+		for (int l = 0; l < cipher.length; l++) {
+			convert[l] = (char) cipher[l];
+			convertedString = convertedString + convert[l];
+		}
+
+		if (cryptType.equals("encrypt")) {
+			convertedString = URLEncoder.encode(convertedString, "UTF-8");
+		}
+		return convertedString;
+	}
+
+	private static String encrypt(String str) {
+		try {
+			return encryptDecrypt(str, "encrypt");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static String decrypt(String str)  {
+		try {
+			return encryptDecrypt(str, "decrypt");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+}
