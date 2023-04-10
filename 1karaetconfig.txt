@@ -1,31 +1,3 @@
-Skip to content
- Enterprise
-Search or jump to…
-Pull requests
-Issues
-Explore
- 
-@INE12398906 
-24Colleague
-/
-WFOTF_TAM_API_Automation
-Internal
-Code
-Issues
-Pull requests
-Projects
-Wiki
-Security
-Insights
-WFOTF_TAM_API_Automation/src/test/java/karate-config.js
-@INE12390792
-INE12390792 TAMCEN-838 Automation comments
-Latest commit 086b407 11 days ago
- History
- 2 contributors
-@INE12369603@INE12390792
-58 lines (53 sloc)  3.09 KB
-
 function fn() {
   karate.configure('abortedStepsShouldPass',true);//Marks skipped steps in reports as passed.
   var env = karate.env; // get system property 'karate.env'
@@ -84,16 +56,3 @@ function fn() {
   config.traceId = '' + java.util.UUID.randomUUID();
   return config;
 }
-FooterTesco Stores Ltd.
-Tesco Stores Ltd.
-Tesco Stores Ltd.
-© 2023 GitHub, Inc.
-Footer navigation
-Help
-Support
-API
-Training
-Blog
-About
-GitHub Enterprise Server 3.7.7
-You have no unread notifications
