@@ -1,0 +1,61 @@
+function fn() {
+  karate.configure('abortedStepsShouldPass',true);//Marks skipped steps in reports as passed.
+  var env = karate.env; // get system property 'karate.env'
+  var threads = karate.properties['karate.threads'];
+  var driverPath;
+  var testTokenVar;
+  var versionNumber;
+/*  We need to do a setup for chromedriver.
+  If running via maven, the @Before method of KarateTest.java will take care and do the
+  set up once and return the path in karate.driverPath which we can use.
+ Else, if we are running running locally via IDE (Eclipse/IntelliJ), since maven is skipped, KarateTest.java is never called
+  and hence we are calling the driver setup method here.*/
+//  driverPath = karate.properties['karate.driverPath'] == null ? Java.type('JavaUtils.MyUtils').setupDriver() : karate.properties['karate.driverPath'];
+
+  var accessTokenGlobal = karate.properties['karate.accessTokenGlobal'];
+//  chromedriver and chrome native take options in a different way.
+//  karate.configure('driver',{ type: 'chromedriver', executable: driverPath, webDriverSession: { desiredCapabilities: { browserName: 'chrome', "goog:chromeOptions": { args:['start-maximized','incognito'] } } } })
+//  karate.configure('driver',{ type: 'chrome', executable: 'chrome.bat', addOptions:['--start-maximized','--incognito']})
+//chrome native uses Dev Protocol of Chrome
+//  karate.configure('driver',{ type: 'chrome', executable:'C:\\Program Files\\Google\\Chrome\\Application\\chrome', addOptions:['--start-maximized','--incognito']})
+  karate.configure('retry', { count: 3, interval: 5000 });
+  if (!env) {
+    env = 'dev';
+  }
+  if (env == 'dev') {
+//    To initialize env specific data
+  } else if (env == 'sit') {
+//    To initialize env specific data
+  }
+
+  userLogin = read('classpath:env/' + env + '/loginDetails.json');
+  apiMetaData = read('classpath:env/' + env +'/apiDetails.json');
+
+  karate.log('karate.env system property:', env);
+  karate.log('karate.threads system property:', threads);
+  karate.log('karate.driverPath system property:', driverPath);
+
+  var config = {
+    env: env,
+	userLogin: userLogin,
+	apiMetaData: apiMetaData,
+	driverPath:driverPath,
+	testTokenVar:testTokenVar,
+	versionNumber:versionNumber,
+	accessTokenGlobal:accessTokenGlobal
+  }
+  karate.configure('ssl', true);
+  karate.configure('callSingleCache', { minutes: 50 });
+//  karate.configure('proxy', 'http://uk2.proxy.tesco.org:80/');
+  // 'callSingle' is guaranteed to run only once even across all threads
+  //var result = karate.callSingle('classpath:feature/authFeature/GetIdentityToken.feature@access-token', config);
+  // and it sets a variable called 'authInfo' used in all the feature file where accessToken is required
+  var tokenResponse = karate.callSingle('classpath:feature/authFeature/GetIdentityToken_PF.feature@AccessToken1', config);
+
+//  config.authInfo = {
+//  authToken: result.response.access_token,
+//  exceptionBFFToken: exceptionBFFTokenResponse.response.access_token
+//  };
+  config.traceId = '' + java.util.UUID.randomUUID();
+  return config;
+}
